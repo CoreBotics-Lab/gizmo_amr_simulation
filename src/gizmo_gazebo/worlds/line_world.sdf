@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <sdf version="1.9">
-  <world name="line_world">
+  <world name="empty">
     <physics name="1ms" type="ignored">
       <max_step_size>0.001</max_step_size>
       <real_time_factor>1.0</real_time_factor>
@@ -79,7 +79,7 @@
     <include>
       <uri>model://line_track</uri>
       <name>line_track</name>
-      <pose>0 0 0.001 0 0 0</pose>
+      <pose>-0.205212 1.100680 0.001 0 0 0</pose>
     </include>
 
   </world>
