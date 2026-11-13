@@ -22,6 +22,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
+            'ros_cv = gizmo_scripts.ros_with_computer_vision:main',
         ],
     },
 )
