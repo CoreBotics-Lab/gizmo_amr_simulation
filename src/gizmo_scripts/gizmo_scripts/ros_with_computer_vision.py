@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+import os
+os.environ["OMP_NUM_THREADS"] = "2"
+os.environ["OPENBLAS_NUM_THREADS"] = "2"
+
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image
@@ -22,7 +26,7 @@ class cv_ros(Node):
         cv2.imshow('Robot Camera View', frame)
         cv2.waitKey(1)
 
-    def destroy_node(self):
+    def destroy_all(self):
         try:
             cv2.destroyAllWindows()
         except Exception:
@@ -39,7 +43,7 @@ def main(args=None):
         pass
 
     finally:
-        cvROS.destroy_node()
+        cvROS.destroy_all()
         if rclpy.ok():
             rclpy.shutdown()
 
