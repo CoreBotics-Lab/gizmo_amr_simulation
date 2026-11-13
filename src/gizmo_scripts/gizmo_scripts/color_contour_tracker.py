@@ -47,6 +47,19 @@ class ColorContourTracker(Node):
         mask_bgr = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
         result = cv2.bitwise_and(frame, frame, mask=mask)
 
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        for cnt in contours:
+            if cv2.contourArea(cnt) > 500:  # ignore tiny speckles (< 500 px²)
+                cv2.drawContours(frame, [cnt], -1, (0, 255, 0), 2)
+                # draw a bounding box around each detected object
+                x, y, w, h = cv2.boundingRect(cnt)
+                cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
+                M = cv2.moments(cnt)
+                if M["m00"] != 0:
+                    cx = int(M["m10"] / M["m00"])
+                    cy = int(M["m01"] / M["m00"])
+                    cv2.circle(frame, (cx, cy), 5, (0, 0, 255), -1)
+                    
         output = np.hstack((frame, mask_bgr, result))
 
         cv2.imshow('HSV Selector', output)
