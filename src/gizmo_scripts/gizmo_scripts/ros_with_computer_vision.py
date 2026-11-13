@@ -35,15 +35,15 @@ class cv_ros(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    cvROS = cv_ros()
+    c_ros = cv_ros()
     try:
-        rclpy.spin(cvROS)
+        rclpy.spin(c_ros)
 
     except KeyboardInterrupt:
         pass
 
     finally:
-        cvROS.destroy_all()
+        c_ros.destroy_all()
         if rclpy.ok():
             rclpy.shutdown()
 
