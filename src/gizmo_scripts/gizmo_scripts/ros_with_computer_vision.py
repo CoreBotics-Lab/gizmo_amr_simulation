@@ -13,6 +13,7 @@ class cv_ros(Node):
         self.camera_sub = self.create_subscription(Image, '/camera/image_raw', self.image_callback, 10)
         cv2.namedWindow('Robot Camera View', cv2.WINDOW_AUTOSIZE)
         cv2.resizeWindow('Robot Camera View', 1280, 720)
+        self.get_logger().info("CV Node started. Waiting for '/camera/image_raw'...")
 
     def image_callback(self, msg: Image):
         
