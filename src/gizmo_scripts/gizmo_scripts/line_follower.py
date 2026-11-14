@@ -7,6 +7,7 @@ os.environ["OPENBLAS_NUM_THREADS"] = "2"
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image
+from std_msgs.msg import Float32
 
 import cv2
 from cv_bridge import CvBridge
@@ -18,6 +19,8 @@ class ColorContourTracker(Node):
         super().__init__('ColorContourTracker')
         self.bridge = CvBridge()
         self.image_sub = self.create_subscription(Image, '/camera/image_raw', self.image_callback, 10)
+        self.error_pub = self.create_publisher(Float32, '/centroid_error', 10)
+
         cv2.namedWindow('HSV Selector', cv2.WINDOW_AUTOSIZE)
         cv2.resizeWindow('HSV Selector', 1280, 720)
 
@@ -33,6 +36,9 @@ class ColorContourTracker(Node):
 
     def image_callback(self, msg: Image):
         frame = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
+        height, width = frame.shape[:2]
+        center_x = width // 2
+        
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
         h_min = cv2.getTrackbarPos('H_min', 'HSV Selector')
         h_max = cv2.getTrackbarPos('H_max', 'HSV Selector')
@@ -59,7 +65,16 @@ class ColorContourTracker(Node):
                     cx = int(M["m10"] / M["m00"])
                     cy = int(M["m01"] / M["m00"])
                     cv2.circle(frame, (cx, cy), 5, (0, 0, 255), -1)
+
+                    # Normalized error [-1.0 to 1.0]
+                    error = float((cx - center_x) / (width / 2.0))
+
+                    # Publish to topic
+                    error_msg = Float32()
+                    error_msg.data = error
+                    self.error_pub.publish(error_msg)
                     
+
         output = np.hstack((frame, mask_bgr, result))
 
         cv2.imshow('HSV Selector', output)
