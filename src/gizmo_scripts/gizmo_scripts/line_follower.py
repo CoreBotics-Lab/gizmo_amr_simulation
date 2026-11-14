@@ -118,6 +118,9 @@ class ControllerNode(Node):
         self.linear_velocity = 0.15
         self.angular_velocity = 0.0
         self.Kp = 4.0
+        self.Kd = 0.3
+        self.prev_error = 0.0
+        self.prev_time = None
 
     def controller_callback(self, msg: Float32):
         if msg is None:
@@ -127,10 +130,27 @@ class ControllerNode(Node):
 
         self.get_logger().info(f'error: {error}')
         cmd = Twist()
-        self.angular_velocity = -self.Kp * error
+        current_time = self.get_clock().now()
+        # Compute dt and derivative
+        if self.prev_time is None:
+            derivative = 0.0
+        else:
+            dt = (current_time - self.prev_time).nanoseconds / 1e9
+            if dt > 0.0:
+                derivative = (error - self.prev_error) / dt
+            else:
+                derivative = 0.0
+
+        # PD controller
+        self.angular_velocity = -(self.Kp * error + self.Kd * derivative)
+
         cmd.linear.x = self.linear_velocity       # Constant forward velocity
         cmd.angular.z = float(self.angular_velocity) # Steering correction
         self.cmd_vel_pub.publish(cmd)
+        
+        # Update state for next cycle
+        self.prev_error = error
+        self.prev_time = current_time
 
 def main(args=None)->None:
     rclpy.init(args=args)
