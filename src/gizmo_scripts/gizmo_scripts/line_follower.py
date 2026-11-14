@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from sys import exception
+
 import os
 os.environ["OMP_NUM_THREADS"] = "2"
 os.environ["OPENBLAS_NUM_THREADS"] = "2"
@@ -8,6 +8,8 @@ import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image
 from std_msgs.msg import Float32
+
+from rclpy.executors import SingleThreadedExecutor
 
 import cv2
 from cv_bridge import CvBridge
@@ -102,15 +104,32 @@ class ColorContourTracker(Node):
             pass
         super().destroy_node()
 
+class ControllerNode(Node):
+    def __init__(self)->None:
+        super().__init__('Controller_node')
+        self.error_sub = self.create_subscription(Float32, '/centroid_error', self.controller_callback, 10)
+
+    def controller_callback(self, msg: Float32):
+        error: float = msg.data
+        self.get_logger().info(f'error: {error}')
+
 def main(args=None)->None:
     rclpy.init(args=args)
+    executor = SingleThreadedExecutor()
     color_contour_tracker = ColorContourTracker()
+    controller_node = ControllerNode()
+
     try:
-        rclpy.spin(color_contour_tracker)
+        executor.add_node(color_contour_tracker)
+        executor.add_node(controller_node)
+
+        executor.spin()
     except KeyboardInterrupt:
         pass
     finally:
         color_contour_tracker.destroy_all()
+        controller_node.destroy_node()
+        executor.shutdown()
         if rclpy.ok():
             rclpy.shutdown()
 
