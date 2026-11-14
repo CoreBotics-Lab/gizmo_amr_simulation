@@ -8,6 +8,7 @@ import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image
 from std_msgs.msg import Float32
+from geometry_msgs.msg import Twist
 
 from rclpy.executors import SingleThreadedExecutor
 
@@ -108,10 +109,23 @@ class ControllerNode(Node):
     def __init__(self)->None:
         super().__init__('Controller_node')
         self.error_sub = self.create_subscription(Float32, '/centroid_error', self.controller_callback, 10)
+        self.cmd_vel_pub = self.create_publisher(Twist, '/cmd_vel', 10)
+        self.linear_velocity = 0.15
+        self.angular_velocity = 0.0
+        self.Kp = 10
 
     def controller_callback(self, msg: Float32):
+        if msg is None:
+            return
+
         error: float = msg.data
+
         self.get_logger().info(f'error: {error}')
+        cmd = Twist()
+        self.angular_velocity = -self.Kp * error
+        cmd.linear.x = self.linear_velocity       # Constant forward velocity
+        cmd.angular.z = float(self.angular_velocity) # Steering correction
+        self.cmd_vel_pub.publish(cmd)
 
 def main(args=None)->None:
     rclpy.init(args=args)
