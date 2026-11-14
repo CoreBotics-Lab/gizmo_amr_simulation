@@ -38,7 +38,11 @@ class ColorContourTracker(Node):
         frame = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
         height, width = frame.shape[:2]
         center_x = width // 2
-        
+
+        # Look only at the lower portion (e.g. from 70% to 90% of image height)
+        roi_top = int(height * 0.7)
+        roi_bottom = int(height * 0.9)
+
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
         h_min = cv2.getTrackbarPos('H_min', 'HSV Selector')
         h_max = cv2.getTrackbarPos('H_max', 'HSV Selector')
@@ -49,11 +53,22 @@ class ColorContourTracker(Node):
 
         lower_hsv = np.array([h_min, s_min, v_min])
         upper_hsv = np.array([h_max, s_max, v_max])
+
+        # Full-frame HSV mask for complete visibility during tuning
         mask = cv2.inRange(hsv, lower_hsv, upper_hsv)
         mask_bgr = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
-        result = cv2.bitwise_and(frame, frame, mask=mask)
 
-        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        # Constrain ROI mask for result frame and contour tracking
+        roi_mask = np.zeros_like(mask)
+        roi_mask[roi_top:roi_bottom, :] = mask[roi_top:roi_bottom, :]
+        result = cv2.bitwise_and(frame, frame, mask=roi_mask)
+
+        # Draw ROI boundary on the frames
+        cv2.rectangle(frame, (0, roi_top), (width, roi_bottom), (0, 255, 255), 2)
+        cv2.rectangle(mask_bgr, (0, roi_top), (width, roi_bottom), (0, 255, 255), 2)
+        cv2.rectangle(result, (0, roi_top), (width, roi_bottom), (0, 255, 255), 2)
+
+        contours, _ = cv2.findContours(roi_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         for cnt in contours:
             if cv2.contourArea(cnt) > 500:  # ignore tiny speckles (< 500 px²)
                 cv2.drawContours(frame, [cnt], -1, (0, 255, 0), 2)
