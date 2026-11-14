@@ -117,7 +117,7 @@ class ControllerNode(Node):
         self.cmd_vel_pub = self.create_publisher(Twist, '/cmd_vel', 10)
         self.linear_velocity = 0.15
         self.angular_velocity = 0.0
-        self.Kp = 10
+        self.Kp = 4.0
 
     def controller_callback(self, msg: Float32):
         if msg is None:
