@@ -24,6 +24,7 @@ setup(
         'console_scripts': [
             'ros_cv = gizmo_scripts.ros_with_computer_vision:main',
             'color_tracker = gizmo_scripts.color_contour_tracker:main',
+            'line_follower = gizmo_scripts.line_follower:main',
         ],
     },
 )
