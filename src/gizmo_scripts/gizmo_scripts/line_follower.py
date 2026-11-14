@@ -26,13 +26,18 @@ class ColorContourTracker(Node):
 
         cv2.namedWindow('HSV Selector', cv2.WINDOW_AUTOSIZE)
         cv2.resizeWindow('HSV Selector', 1280, 720)
-
-        cv2.createTrackbar('H_min', 'HSV Selector', 0, 179, lambda x: None)
-        cv2.createTrackbar('H_max', 'HSV Selector', 179, 179, lambda x: None)
-        cv2.createTrackbar('S_min', 'HSV Selector', 0, 255, lambda x: None)
-        cv2.createTrackbar('S_max', 'HSV Selector', 255, 255, lambda x: None)
-        cv2.createTrackbar('V_min', 'HSV Selector', 0, 255, lambda x: None)
-        cv2.createTrackbar('V_max', 'HSV Selector', 255, 255, lambda x: None)
+        
+        DEFAULT_HSV = {
+            'h_min': 22, 'h_max': 38,
+            's_min': 100, 's_max': 255,
+            'v_min': 100, 'v_max': 255
+        }
+        cv2.createTrackbar('H_min', 'HSV Selector', DEFAULT_HSV['h_min'], 179, lambda x: None)
+        cv2.createTrackbar('H_max', 'HSV Selector', DEFAULT_HSV['h_max'], 179, lambda x: None)
+        cv2.createTrackbar('S_min', 'HSV Selector', DEFAULT_HSV['s_min'], 255, lambda x: None)
+        cv2.createTrackbar('S_max', 'HSV Selector', DEFAULT_HSV['s_max'], 255, lambda x: None)
+        cv2.createTrackbar('V_min', 'HSV Selector', DEFAULT_HSV['v_min'], 255, lambda x: None)
+        cv2.createTrackbar('V_max', 'HSV Selector', DEFAULT_HSV['v_max'], 255, lambda x: None)
 
 
         self.get_logger().info("CV Node started. Waiting for '/camera/image_raw'...")
