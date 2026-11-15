@@ -43,6 +43,7 @@ class ColorContourTracker(Node):
         self.get_logger().info("CV Node started. Waiting for '/camera/image_raw'...")
 
     def image_callback(self, msg: Image):
+        error_msg = Float32()
         frame = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
         height, width = frame.shape[:2]
         center_x = width // 2
@@ -77,26 +78,30 @@ class ColorContourTracker(Node):
         cv2.rectangle(result, (0, roi_top), (width, roi_bottom), (0, 255, 255), 2)
 
         contours, _ = cv2.findContours(roi_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        for cnt in contours:
-            if cv2.contourArea(cnt) > 500:  # ignore tiny speckles (< 500 px²)
-                cv2.drawContours(frame, [cnt], -1, (0, 255, 0), 2)
-                # draw a bounding box around each detected object
-                x, y, w, h = cv2.boundingRect(cnt)
-                cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
-                M = cv2.moments(cnt)
-                if M["m00"] != 0:
-                    cx = int(M["m10"] / M["m00"])
-                    cy = int(M["m01"] / M["m00"])
-                    cv2.circle(frame, (cx, cy), 5, (0, 0, 255), -1)
+        valid_contours = [cnt for cnt in contours if cv2.contourArea(cnt) > 500]
 
-                    # Normalized error [-1.0 to 1.0]
-                    error = float((cx - center_x) / (width / 2.0))
+        if valid_contours:
+            # Track only the largest contour (prevents publishing error when multiple contour was detectes.!)
+            largest_cnt = max(valid_contours, key=cv2.contourArea)
+            cv2.drawContours(frame, [largest_cnt], -1, (0, 255, 0), 2)
+            # draw a bounding box around each detected object
+            x, y, w, h = cv2.boundingRect(largest_cnt)
+            cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
+            M = cv2.moments(largest_cnt)
+            if M["m00"] != 0:
+                cx = int(M["m10"] / M["m00"])
+                cy = int(M["m01"] / M["m00"])
+                cv2.circle(frame, (cx, cy), 5, (0, 0, 255), -1)
 
-                    # Publish to topic
-                    error_msg = Float32()
-                    error_msg.data = error
-                    self.error_pub.publish(error_msg)
-                    
+                # Normalized error [-1.0 to 1.0]
+                error = float((cx - center_x) / (width / 2.0))
+
+                # Publish to topic
+                error_msg.data = error
+                self.error_pub.publish(error_msg)
+        else:
+            # No line in sight -> Send NaN to trigger emergency halt!
+            self.error_pub.publish(Float32(data=float('nan')))
 
         output = np.hstack((frame, mask_bgr, result))
 
@@ -123,13 +128,19 @@ class ControllerNode(Node):
         self.prev_time = None
 
     def controller_callback(self, msg: Float32):
+        cmd = Twist()
         if msg is None:
-            return
+            return        
 
         error: float = msg.data
+        if np.isnan(error):
+            cmd.linear.x = 0
+            cmd.angular.z = 0
+            self.cmd_vel_pub.publish(cmd)
+            self.prev_time = None # Reset timestamp so derivative doesn't spike when line is re-found
+            return
 
         self.get_logger().info(f'error: {error}')
-        cmd = Twist()
         current_time = self.get_clock().now()
         # Compute dt and derivative
         if self.prev_time is None:
