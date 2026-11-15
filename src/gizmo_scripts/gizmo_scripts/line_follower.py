@@ -23,6 +23,7 @@ class ColorContourTracker(Node):
         self.bridge = CvBridge()
         self.image_sub = self.create_subscription(Image, '/camera/image_raw', self.image_callback, 10)
         self.error_pub = self.create_publisher(Float32, '/centroid_error', 10)
+        self.track_lost_latched = True
 
         cv2.namedWindow('HSV Selector', cv2.WINDOW_AUTOSIZE)
         cv2.resizeWindow('HSV Selector', 1280, 720)
@@ -99,9 +100,12 @@ class ColorContourTracker(Node):
                 # Publish to topic
                 error_msg.data = error
                 self.error_pub.publish(error_msg)
+                self.track_lost_latched = True
         else:
             # No line in sight -> Send NaN to trigger emergency halt!
-            self.error_pub.publish(Float32(data=float('nan')))
+            if self.track_lost_latched:
+                self.error_pub.publish(Float32(data=float('nan')))
+                self.track_lost_latched = False
 
         output = np.hstack((frame, mask_bgr, result))
 
