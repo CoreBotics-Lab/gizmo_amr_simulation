@@ -148,9 +148,7 @@ class ControllerNode(Node):
 
         error: float = msg.data
         if np.isnan(error):
-            cmd.linear.x = 0
-            cmd.angular.z = 0
-            self.cmd_vel_pub.publish(cmd)
+            self.stop()
             self.prev_time = None # Reset timestamp so derivative doesn't spike when line is re-found
             return
 
