@@ -124,12 +124,21 @@ class ControllerNode(Node):
         super().__init__('Controller_node')
         self.error_sub = self.create_subscription(Float32, '/centroid_error', self.controller_callback, 10)
         self.cmd_vel_pub = self.create_publisher(Twist, '/cmd_vel', 10)
-        self.linear_velocity = 0.15
-        self.angular_velocity = 0.0
+
         self.Kp = 4.0
         self.Kd = 0.3
         self.prev_error = 0.0
         self.prev_time = None
+
+        # self.linear_velocity = 0.15
+        self.angular_velocity = 0.0
+
+        # let's do dynamic speeding in straight track and turning track
+        self.max_velocity = 0.50
+        self.turn_velocity = 0.30
+        self.current_speed = self.turn_velocity
+        self.straight_threshold = 0.03
+        self.turn_threshold = 0.06
 
     def controller_callback(self, msg: Float32):
         cmd = Twist()
@@ -159,7 +168,12 @@ class ControllerNode(Node):
         # PD controller
         self.angular_velocity = -(self.Kp * error + self.Kd * derivative)
 
-        cmd.linear.x = self.linear_velocity       # Constant forward velocity
+        if abs(error) < self.straight_threshold:
+            self.current_speed = self.max_velocity
+        elif abs(error) > self.turn_threshold:
+            self.current_speed = self.turn_velocity
+
+        cmd.linear.x = self.current_speed       # Constant forward velocity based on straight and turn track
         cmd.angular.z = float(self.angular_velocity) # Steering correction
         self.cmd_vel_pub.publish(cmd)
         
