@@ -195,6 +195,8 @@ def main(args=None)->None:
     except KeyboardInterrupt:
         pass
     finally:
+        # Publish an empty Twist message (defaults to zero) to safely stop the robot on shutdown
+        controller_node.cmd_vel_pub.publish(Twist())
         color_contour_tracker.destroy_all()
         controller_node.destroy_node()
         executor.shutdown()
