@@ -5,6 +5,7 @@ os.environ["OMP_NUM_THREADS"] = "2"
 os.environ["OPENBLAS_NUM_THREADS"] = "2"
 
 import rclpy
+from rclpy.signals import SignalHandlerOptions
 from rclpy.node import Node
 from sensor_msgs.msg import Image
 from std_msgs.msg import Float32
@@ -26,7 +27,7 @@ class ColorContourTracker(Node):
         self.track_lost_latched = True
 
         cv2.namedWindow('HSV Selector', cv2.WINDOW_AUTOSIZE)
-        cv2.resizeWindow('HSV Selector', 1280, 720)
+        cv2.resizeWindow('HSV Selector', 1280//3, 720//3)
         
         DEFAULT_HSV = {
             'h_min': 22, 'h_max': 38,
@@ -180,9 +181,17 @@ class ControllerNode(Node):
         # Update state for next cycle
         self.prev_error = error
         self.prev_time = current_time
+    
+    def stop(self):
+        # Broadcast zero velocity and give DDS a moment to flush across the network
+        import time
+        stop_cmd = Twist()
+        for _ in range(5):
+            self.cmd_vel_pub.publish(stop_cmd)
+            time.sleep(0.02)
 
 def main(args=None)->None:
-    rclpy.init(args=args)
+    rclpy.init(args=args, signal_handler_options=SignalHandlerOptions.NO)
     executor = SingleThreadedExecutor()
     color_contour_tracker = ColorContourTracker()
     controller_node = ControllerNode()
@@ -196,7 +205,8 @@ def main(args=None)->None:
         pass
     finally:
         # Publish an empty Twist message (defaults to zero) to safely stop the robot on shutdown
-        controller_node.cmd_vel_pub.publish(Twist())
+        controller_node.stop()
+
         color_contour_tracker.destroy_all()
         controller_node.destroy_node()
         executor.shutdown()
@@ -205,3 +215,24 @@ def main(args=None)->None:
 
 if __name__=='__main__':
     main()
+
+# ==============================================================================
+# Note on SignalHandlerOptions.NO:
+# --------------------------------
+# 1. Default Behavior:
+#    On Ctrl+C, the C-level POSIX signal handler automatically triggers
+#    rcl_shutdown(), destroying the context before Python's finally: block
+#    can transmit the stop command.
+#
+# 2. With SignalHandlerOptions.NO:
+#    Tells ROS 2 not to shut down the C context automatically upon SIGINT,
+#    allowing Python's KeyboardInterrupt to handle the signal cleanly.
+#
+# 3. Active Context:
+#    Because the context remains alive, stop() successfully broadcasts the
+#    zero-velocity halt packets across DDS to stop the physical motors.
+#
+# 4. Manual Shutdown:
+#    Because automatic C shutdown is disabled, we must explicitly call
+#    rclpy.shutdown() at the end of finally: to terminate all DDS threads.
+# ==============================================================================
