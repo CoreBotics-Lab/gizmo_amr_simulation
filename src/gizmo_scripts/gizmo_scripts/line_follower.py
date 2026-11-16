@@ -26,8 +26,8 @@ class ColorContourTracker(Node):
         self.error_pub = self.create_publisher(Float32, '/centroid_error', 10)
         self.track_lost_latched = True
 
-        cv2.namedWindow('HSV Selector', cv2.WINDOW_AUTOSIZE)
-        cv2.resizeWindow('HSV Selector', 1280//3, 720//3)
+        cv2.namedWindow('HSV Selector', cv2.WINDOW_FREERATIO)
+        cv2.resizeWindow('HSV Selector', 1280, 640)
         
         DEFAULT_HSV = {
             'h_min': 22, 'h_max': 38,
