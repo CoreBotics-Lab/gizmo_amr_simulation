@@ -4,6 +4,53 @@ A reproducible autonomous robotics workspace for the Gizmo 2-Wheel Differential 
 
 ---
 
+## Getting Started
+
+### Prerequisites
+
+All dependencies (ROS 2 lyrical, Gazebo Harmonic, OpenCV) are managed reproducibly via [Pixi](https://pixi.sh).
+
+```bash
+# Clone the repository
+git clone https://github.com/CoreboticsLab/gizmo_amr_simulation.git
+cd gizmo_amr_simulation
+
+# Enter the isolated Pixi environment
+pixi shell
+```
+
+### Build the Workspace
+
+```bash
+# Build the ROS 2 packages with symlink install
+colcon build --symlink-install
+
+# Source the workspace setup file
+source install/setup.bash
+```
+
+---
+
+## Running the Line Follower
+
+Open two terminals inside the repository and run:
+
+### Terminal 1: Launch Gazebo Simulation
+```bash
+pixi shell
+ros2 launch gizmo_gazebo gazebo_lineWorld.launch.py
+```
+
+### Terminal 2: Run Autonomous Line Follower
+```bash
+pixi shell
+ros2 run gizmo_scripts line_follower
+```
+* Automatically streams the monocular camera feed, extracts the track centroid, and executes the PD steering controller with adaptive throttle.
+* Press `Ctrl+C` at any time to cleanly halt the robot and shut down nodes.
+
+---
+
 ## System Architecture
 
 The line-following system implements a closed-loop Visual Servoing architecture partitioned into Perception and Control nodes managed by a `SingleThreadedExecutor`:
@@ -52,53 +99,6 @@ The line-following system implements a closed-loop Visual Servoing architecture 
 |   Applies wheel angular velocities: v_left, v_right                               |
 +-----------------------------------------------------------------------------------+
 ```
-
----
-
-## Getting Started
-
-### Prerequisites
-
-All dependencies (ROS 2 lyrical, Gazebo Harmonic, OpenCV) are managed reproducibly via [Pixi](https://pixi.sh).
-
-```bash
-# Clone the repository
-git clone https://github.com/CoreboticsLab/gizmo_amr_simulation.git
-cd gizmo_amr_simulation
-
-# Enter the isolated Pixi environment
-pixi shell
-```
-
-### Build the Workspace
-
-```bash
-# Build the ROS 2 packages with symlink install
-colcon build --symlink-install
-
-# Source the workspace setup file
-source install/setup.bash
-```
-
----
-
-## Running the Line Follower
-
-Open two terminals inside the repository and run:
-
-### Terminal 1: Launch Gazebo Simulation
-```bash
-pixi shell
-ros2 launch gizmo_gazebo gazebo_lineWorld.launch.py
-```
-
-### Terminal 2: Run Autonomous Line Follower
-```bash
-pixi shell
-ros2 run gizmo_scripts line_follower
-```
-* Automatically streams the monocular camera feed, extracts the track centroid, and executes the PD steering controller with adaptive throttle.
-* Press `Ctrl+C` at any time to cleanly halt the robot and shut down nodes.
 
 ---
 
