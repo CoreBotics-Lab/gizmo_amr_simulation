@@ -39,9 +39,9 @@ rclpy.init(args=args, signal_handler_options=SignalHandlerOptions.NO)
 ### The Locomotion Safety Hazard
 Mobile ground robots (such as two-wheel differential drive or omnidirectional AMRs) operate via continuous velocity integration. Actuators and motor drivers continuously execute the last received setpoint until instructed otherwise or until a safety watchdog expires:
 
-```math
+$$
 \mathbf{u} = \begin{bmatrix} v_x \\ \omega_z \end{bmatrix}
-```
+$$
 
 * If a line-following or path-tracking node is commanded at $v_x = 0.50\text{ m/s}$ and the process is killed abruptly, the robot will continue driving blindly across the floor at $0.50\text{ m/s}$ until physical impact or watchdog timeout.
 * To guarantee deterministic, safe behavior, an autonomous driving node must actively transmit an explicit zero-velocity halt packet (`Twist()` with $v_x = 0.0, \omega_z = 0.0$) during termination.
