@@ -12,7 +12,7 @@ All dependencies (ROS 2 lyrical, Gazebo Harmonic, OpenCV) are managed reproducib
 
 ```bash
 # Clone the repository
-git clone https://github.com/CoreboticsLab/gizmo_amr_simulation.git
+git clone https://github.com/CoreBotics-Lab/gizmo_amr_simulation.git
 cd gizmo_amr_simulation
 
 # Enter the isolated Pixi environment
