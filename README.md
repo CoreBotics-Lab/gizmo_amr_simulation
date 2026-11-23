@@ -51,6 +51,20 @@ ros2 run gizmo_scripts line_follower
 
 ---
 
+## Demonstration
+
+<p align="center">
+  <img src="media/line_follower.gif" alt="Gizmo AMR Autonomous Line Following" width="100%">
+</p>
+
+*Figure 1: Autonomous visual servoing line-following in Gazebo Harmonic. Monocular frames are segmented via an HSV threshold within a 70%–90% height ROI to extract the line centroid and compute normalized lateral tracking error $e \in [-1.0, 1.0]$. Steering correction is governed by discrete PD control:*
+
+$$\omega_z = -(K_p \cdot e + K_d \cdot \frac{\Delta e}{\Delta t})$$
+
+*with $K_p = 4.0$ and $K_d = 0.30$, alongside dual-mode adaptive throttle switching between $v_x = 0.50\text{ m/s}$ on straightaways ($|e| < 0.03$) and $v_x = 0.30\text{ m/s}$ in high-curvature turns ($|e| > 0.06$).*
+
+---
+
 ## System Architecture
 
 The line-following system implements a closed-loop Visual Servoing architecture partitioned into Perception and Control nodes managed by a `SingleThreadedExecutor`:
@@ -99,9 +113,3 @@ The line-following system implements a closed-loop Visual Servoing architecture 
 |   Applies wheel angular velocities: v_left, v_right                               |
 +-----------------------------------------------------------------------------------+
 ```
-
----
-
-## Demonstration
-
-![Gizmo AMR Autonomous Line Following](media/line_follower.gif)
