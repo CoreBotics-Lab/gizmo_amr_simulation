@@ -21,9 +21,13 @@ class Apriltag_Tracker(Node):
 
         frame = self.cv_bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
         gray_img = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        cv2.imshow('apriltag_gray', gray_img)
+        # cv2.imshow('apriltag_gray', gray_img)
         cv2.imshow('apriltag frame', frame)
         cv2.waitKey(1)
+
+    def clean_up(self):
+        cv2.destroyAllWindows()
+        self.destroy_node()
 
 def main(args=None):
     rclpy.init(args=args)
@@ -34,9 +38,12 @@ def main(args=None):
         pass
 
     finally:
-        apriltag_tracker.destroy_node()
-        if rclpy.ok():
-            rclpy.shutdown()
+        try:
+            apriltag_tracker.clean_up()
+            if rclpy.ok():
+                rclpy.shutdown()
+        except KeyboardInterrupt:
+            pass
 
 if __name__ == '__main__':
     main()

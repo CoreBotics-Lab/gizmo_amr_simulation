@@ -113,12 +113,9 @@ class ColorContourTracker(Node):
         cv2.imshow('HSV Selector', output)
         cv2.waitKey(1)
         
-    def destroy_all(self):
-        try:
-            cv2.destroyAllWindows()
-        except Exception:
-            pass
-        super().destroy_node()
+    def clean_up(self):
+        cv2.destroyAllWindows()
+        self.destroy_node()
 
 class ControllerNode(Node):
     def __init__(self)->None:
@@ -187,6 +184,9 @@ class ControllerNode(Node):
         for _ in range(5):
             self.cmd_vel_pub.publish(stop_cmd)
             time.sleep(0.02)
+            
+    def clean_up(self):
+        self.destroy_node()
 
 def main(args=None)->None:
     rclpy.init(args=args, signal_handler_options=SignalHandlerOptions.NO)
@@ -205,8 +205,8 @@ def main(args=None)->None:
         # Publish an empty Twist message (defaults to zero) to safely stop the robot on shutdown
         controller_node.stop()
 
-        color_contour_tracker.destroy_all()
-        controller_node.destroy_node()
+        color_contour_tracker.clean_up()
+        controller_node.clean_up()
         executor.shutdown()
         if rclpy.ok():
             rclpy.shutdown()
