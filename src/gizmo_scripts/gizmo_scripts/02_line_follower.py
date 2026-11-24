@@ -17,6 +17,7 @@ import cv2
 from cv_bridge import CvBridge
 
 import numpy as np
+import time
 
 class ColorContourTracker(Node):
     def __init__(self)->None:
@@ -177,14 +178,19 @@ class ControllerNode(Node):
         self.prev_error = error
         self.prev_time = current_time
     
-    def stop(self):
+    def stop(self, flush: bool = False):
         # Broadcast zero velocity and give DDS a moment to flush across the network
-        import time
         stop_cmd = Twist()
-        for _ in range(5):
-            self.cmd_vel_pub.publish(stop_cmd)
-            time.sleep(0.02)
-            
+        self.cmd_vel_pub.publish(stop_cmd)
+        
+        # During shutdown (flush=True), broadcast a burst of zero-velocity commands to
+        # ensure DDS transmits all halt packets across the network before context teardown.
+        # Bypassed during normal runtime to avoid blocking the SingleThreadedExecutor.
+        if flush:
+            for _ in range(4):
+                self.cmd_vel_pub.publish(stop_cmd)
+                time.sleep(0.02)
+
     def clean_up(self):
         self.destroy_node()
 
@@ -202,14 +208,16 @@ def main(args=None)->None:
     except KeyboardInterrupt:
         pass
     finally:
-        # Publish an empty Twist message (defaults to zero) to safely stop the robot on shutdown
-        controller_node.stop()
-
-        color_contour_tracker.clean_up()
-        controller_node.clean_up()
-        executor.shutdown()
-        if rclpy.ok():
-            rclpy.shutdown()
+        try:
+            # Multi-packet flush stop only on final process shutdown
+            controller_node.stop(flush=True)
+            color_contour_tracker.clean_up()
+            controller_node.clean_up()
+            executor.shutdown()
+            if rclpy.ok():
+                rclpy.shutdown()
+        except KeyboardInterrupt:
+            pass
 
 if __name__=='__main__':
     main()
