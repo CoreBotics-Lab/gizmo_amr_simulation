@@ -22,10 +22,10 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'ros_cv = gizmo_scripts.ros_with_computer_vision:main',
-            'color_tracker = gizmo_scripts.color_contour_tracker:main',
-            'line_follower = gizmo_scripts.line_follower:main',
-            'apriltag_tracker = gizmo_scripts.apriltag_tracker:main',
+            'ros_cv = gizmo_scripts.00_ros_with_computer_vision:main',
+            'color_tracker = gizmo_scripts.01_color_contour_tracker:main',
+            'line_follower = gizmo_scripts.02_line_follower:main',
+            'apriltag_tracker = gizmo_scripts.03_apriltag_tracker:main',
         ],
     },
 )
